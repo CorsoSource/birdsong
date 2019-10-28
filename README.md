@@ -5,6 +5,29 @@ Canary is a historian from Canary Labs, and `Birdsong` is a library for interfac
 
 Birdsong will take care of the details of dealing with REST calls, tokens, continuations, and other powerful low level features to let you focus on making Canary sing.
 
+## Table of Contents
+
+ - [Installation](#installation)
+ - [Quickstart](#quickstart)
+ - [Usage](#usage)
+   - [Helper structures](#helper-structures)
+   - [Sending data to Canary: `CanarySender`](#sending-data-to-canary-canarysender)
+     - [Create new file: `createNewFile`](#create-new-file-createnewfile)
+     - [Create rollover file: `fileRollover`](#create-rollover-file-filerollover)
+     - [Store data: `storeData`](#store-data-storedata)
+   - [Viewing data in Canary: `CanaryView`](#viewing-data-in-canary-canaryview)
+     - [Exploring Canary: `browseNodes`](#exploring-canary-browsenodes)
+     - [Exploring tags: `browseTags`](#exploring-tags-browsetags)
+     - [Get node status: `browseStatus`](#get-node-status-browsestatus)
+     - [Option values: translate quality values: `getQualities`](#option-values-translate-quality-values-getqualities)
+     - [Option values: get aggregate values: `getAggregates`](#option-values-get-aggregate-values-getaggregates)
+     - [Get tag data: `getTagData`](#get-tag-data-gettagdata)
+     - [Get tag properties: `getTagProperties`](#get-tag-properties-gettagproperties)
+     - [Get *live* tag data: `getLiveData`](#get-live-tag-data-getlivedata)
+ - [Advanced usage](#advanced-usage)
+ - [Contributing](#contributing)
+ - [License](#license)
+
 ## Installation
 
 Copy the contents of the Canary folder into your `site-packages` folder in your Python `libs` folder.
@@ -565,7 +588,7 @@ while True:
 
     sleep(stepTime)
 
-# Manually clsoe out the connection
+# Manually close out the connection
 view.__exit__()
 ```
 
