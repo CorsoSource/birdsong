@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="birdsong", # Replace with your own username
-    version="1.0.1",
+    version="1.0.2",
     author="Andrew Geiger",
     author_email="andrew.geiger@corsosystems.com",
     description="A Python API to Canary Lab's historian web services.",

@@ -30,10 +30,16 @@ Birdsong will take care of the details of dealing with REST calls, tokens, conti
 
 ## Installation
 
+### Pip
+
+You can use the packages on the PyPI via pip:
+```bash
+python -m pip install birdsong --upgrade
+```
+
+### Manual installation
 Copy the contents of the Canary folder into your `site-packages` folder in your Python `libs` folder.
 Depending on your environment, use the Git branch appropriate. 
-
-Pip coming soon!
 
 ## Quickstart
 
@@ -65,6 +71,12 @@ In this we:
 - And after the `with` statements, Python exited the connections (first `view` then `sender`), revoking tokens as needed to free them up for others to use.
 
 > Inside baseball note: if the `view` was initialized outside the sender service's context (the `with` statement), the value returned would have been `None`, since we didn't tell the sender service to set `autoWriteNoData=False`. Thus, once the `with` ends the sender would have automatically marked an end to the data transmission session via a `No Data` entry. Pass in the flag to suppress that, if desired.
+
+## Important security notice: `noVerifySSL=False` by default
+
+Because many Canary instances are on intranets and may or may not have certificates that are easily validated by a trusted central authority, SSL validation is *OFF by default*.
+
+You may keep warnings on if you set `birdsong.rest.VALIDATE_SSL_CERTS = True` before initializing a connection to Canary. You may also manually turn on cert validation by passing in `verifySSL=True` to `CanaryView` and `CanarySender` on initialization.
 
 ## Usage
 
