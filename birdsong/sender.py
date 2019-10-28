@@ -35,7 +35,7 @@ class CanarySender(SessionTokenManagement, UserTokenManagement):
             httpPort: (str) Port configured for anonymous HTTP access
             httpsPort: (str) Port configured for user/pass HTTPS access
         """
-        super().__init__(httpPort =httpPort, httpsPort=httpsPort, **configuration)
+        super(CanarySender, self).__init__(httpPort =httpPort, httpsPort=httpsPort, **configuration)
 
 
     # Storage - File options
