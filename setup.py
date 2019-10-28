@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="birdsong-null-directory", # Replace with your own username
-    version="1.0.0",
+    name="birdsong", # Replace with your own username
+    version="1.0.1",
     author="Andrew Geiger",
     author_email="andrew.geiger@corsosystems.com",
     description="A Python API to Canary Lab's historian web services.",

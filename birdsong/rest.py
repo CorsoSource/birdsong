@@ -1,5 +1,5 @@
 import requests, json
-
+import urllib3
 
 class RestInterface(object):
     """Interface methods for talking to Canary."""
@@ -8,7 +8,7 @@ class RestInterface(object):
     __slots__ = ('host', 'https', 'ports', '_session', 'lastResults')
     
     def __init__(self, host='localhost', https=False, 
-                 httpPort=80, httpsPort=443,
+                 httpPort=80, httpsPort=443, noVerifySSL=True,
                  **configuration):        
         self.https = https
         self.host  = host
@@ -17,6 +17,10 @@ class RestInterface(object):
         self._session = None
 
         self.lastResults = None
+
+        self.noVerifySSL = noVerifySSL
+        if self.noVerifySSL:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         
         super().__init__(**configuration)
 
@@ -53,7 +57,7 @@ class RestInterface(object):
                                             self.ports[self.https],
                                             self.apiVersion,
                                             apiUrl)
-        response = self.session.post(url,data=jsonData)
+        response = self.session.post(url,data=jsonData, verify=(self.https and not self.noVerifySSL))
         responseJson = response.json()
         self.lastResults = responseJson
         
