@@ -14,7 +14,7 @@ class UserTokenManagement(RestInterface):
         if self._username and self._password:
             configuration['https'] = True
 
-        super(UserTokenManagement, self).__init__(**configuration)
+        super().__init__(**configuration)
     
 
     @property
@@ -58,7 +58,7 @@ class UserTokenManagement(RestInterface):
 
     def _post(self, apiUrl, jsonData):
 
-        super(UserTokenManagement, self)._post(apiUrl, jsonData)
+        super()._post(apiUrl, jsonData)
 
         # Check if it failed. If so, reload.
         if self.lastResults['statusCode'] == 'BadUserToken':
@@ -79,7 +79,7 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
             liveMode='AllValues',
             liveIncludeQuality=False,
             **configuration):
-        super(LiveDataTokenManagement,self).__init__(**configuration)
+        super().__init__(**configuration)
         
         self._liveDataTokens = {}
         self._liveDataConfigurations = {}
@@ -92,7 +92,7 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
 
     def __exit__(self, *args):
         self._revokeLiveDataToken()
-        super(LiveDataTokenManagement,self).__exit__(*args)
+        super().__exit__(*args)
     
 
     # Live data methods
@@ -131,7 +131,7 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
 
     def _revokeUserToken(self):
         self._revokeLiveDataToken()
-        super(LiveDataTokenManagement,self)._revokeUserToken()
+        super()._revokeUserToken()
 
 
     def _rotateLiveDataToken(self, liveDataToken):
@@ -154,7 +154,7 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
     # Error Handling
 
     def _post(self, apiUrl, jsonData):
-        super(LiveDataTokenManagement, self)._post(apiUrl, jsonData)
+        super()._post(apiUrl, jsonData)
 
         # Check if it failed. If so, reload.
         if self.lastResults['statusCode'] == 'BadLiveDataToken':
@@ -213,20 +213,20 @@ class SessionTokenManagement(UserTokenManagement, RestInterface):
             'suppressTimestampErrors': suppressTimestampErrors,            
         }
         
-        super(SessionTokenManagement,self).__init__(**configuration)
+        super().__init__(**configuration)
 
  
     # Context management
 
     def __enter__(self):
-        super(SessionTokenManagement,self).__enter__()
+        super().__enter__()
         self._getSessionToken()
         return self
 
 
     def __exit__(self, *args):
         self._revokeSessionToken()
-        super(SessionTokenManagement,self).__exit__(*args)
+        super().__exit__(*args)
 
 
     # Session token API calls
@@ -299,7 +299,7 @@ class SessionTokenManagement(UserTokenManagement, RestInterface):
 
     def _post(self, apiUrl, jsonData):
 
-        super(SessionTokenManagement, self)._post(apiUrl, jsonData)
+        super()._post(apiUrl, jsonData)
 
         # Check if it failed. If so, reload.
         if (   self.lastResults['statusCode'] == 'BadSessionToken' 

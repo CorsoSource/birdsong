@@ -14,7 +14,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
                  httpPort =DEFAULT_VIEW_PORT_ANONYMOUS_HTTP,
                  httpsPort=DEFAULT_VIEW_PORT_USERNAME_HTTPS,
                  **configuration):
-        super(CanaryView, self).__init__(httpPort =httpPort, httpsPort=httpsPort, **configuration)
+        super().__init__(httpPort =httpPort, httpsPort=httpsPort, **configuration)
 
                  
     # Browse Methods
@@ -68,7 +68,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
         }
         statuses = self._singlePost('browseStatus', jsonData, 'views')
 
-        if isinstance(views, (str,unicode)):
+        if isinstance(views, str):
             return statuses.get(views,{}).get('sequence', None)
         else:
             return ((viewName,statuses.get(viewName,{}).get('sequence',None)) 
@@ -118,7 +118,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
         tagPropDict = self._singlePost('getTagProperties', jsonData, 'properties')
     
         # Return the dict directly if just a single tag was asked for
-        if isinstance(tags, (str,unicode)):
+        if isinstance(tags, str):
             return tagPropDict.get(tags, {})
         # ... otherwise return an iterator
         else:
@@ -170,7 +170,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
                 del constraints[fromKey]
 
         # If only a single tag path was provided, simply return values
-        if isinstance(tags, (str, unicode)):
+        if isinstance(tags, str):
             tagPath = tags 
             for valueChunk in self._getTagData(tagPath, **constraints):
                 # If only one value is returned, the result is NOT a list of one element
@@ -211,7 +211,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
                 raise ValueError("getLiveData() called without a tag list _and_ did not have only one live data token.")
             liveDataToken = list(self._liveDataTokens.values())[0]
         else:
-            justThatTagMaam = isinstance(tags, (str, unicode))
+            justThatTagMaam = isinstance(tags, str)
                 
             tags = self._coerceToList(tags)
             tagSet = frozenset(tags)
@@ -240,7 +240,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
     # Error Handling
 
     def _post(self, apiUrl, jsonData):
-        super(CanaryView, self)._post(apiUrl, jsonData)
+        super()._post(apiUrl, jsonData)
 
         # Check if it failed. If so, reload.
         if self.lastResults['statusCode'] == 'BadLicense':

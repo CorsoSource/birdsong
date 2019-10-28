@@ -18,7 +18,7 @@ class RestInterface(object):
 
         self.lastResults = None
         
-        super(RestInterface,self).__init__(**configuration)
+        super().__init__(**configuration)
 
         
     @property
