@@ -122,7 +122,7 @@ class CanarySender(SessionTokenManagement, UserTokenManagement):
             allowedTypes = (Tvq, Property, Annotation)
             # If the list isn't empty, check if it's a singleton entry
             if someList and not isinstance(someList[0], (tuple, list) + allowedTypes):
-                return [someList]
+                return [someList.values() if isinstance(someList, allowedTypes) else someList]
             else:
                 return [value.values() if isinstance(value, allowedTypes) else value
                         for value in values]
@@ -144,7 +144,8 @@ class CanarySender(SessionTokenManagement, UserTokenManagement):
         }
 
         if sum(sum(len(values) for values in tagDict.values())
-               for tagDict in dataToSend.values()) < maxPageSize:
+               for tagDict in dataToSend.values()
+               ) < maxPageSize:
             self._storeData(**dataToSend)
         else:
             # Page out the data. Sort to make ensure earliest entries are added first
