@@ -1,7 +1,7 @@
 # Birdsong - A Python interface to the Canary API
 _Make talking to Canary easy_
 
-Canary is a historian from Canary Labs, and `Birdsong` is a library for interfacing with it via Python.
+[Canary](https://canarylabs.com/en/products/historian) is a historian from [Canary Labs](https://github.com/CanaryLabs), and `birdsong` is a library for interfacing with it via Python.
 
 Birdsong will take care of the details of dealing with REST calls, tokens, continuations, and other powerful low level features to let you focus on making Canary sing.
 
