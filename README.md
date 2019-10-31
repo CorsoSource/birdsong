@@ -51,7 +51,7 @@ viewName = 'CS-Surface61'
 datasetName = 'Testing2'
 tagPath = datasetName + '.Quick Data!!!'
 with CanarySender(autoCreateDatasets=True) as sender:
-    sender.storeData({tagPath: [Tvq('2019-10-20 12:34', -666), Tvq('2019-10-20 3:20 PM', 999)]})
+    sender.storeData({tagPath: [Tvq('2019-10-20 12:34Z', -666), Tvq('2019-10-20 15:20Z', 999)]})
     
     with CanaryView() as view:
         print(next(view.getTagData(viewName + '.' + tagPath)))
@@ -140,6 +140,12 @@ The values for these are:
 | Property | `name`, `timestamp`, `value`, `quality` * |
 | Annotation | `user`, `timestamp`, `value`, `createdAt`* |
 > `*` are optional
+
+Note that these will attempt to convert the timestamp to an [Arrow](https://arrow.readthedocs.io/en/latest/) datetime object. It's just like a normal `datetime` object, but a bit smarter and easier to manipulate. Combined with [ciso8601](https://github.com/closeio/ciso8601), this can quickly convert the timestamps to a highly flexible object.
+
+Each class has a settter like `Tvq.setTimeFormat('...')` that can be called in case something perverse like a _non_-ISO8601 date is parsed. Note that a timezone should be set. Canary returns results in a timezone sensitive way - *be _ever_ wary of naked timestamps, especially when searching, filtering, and storing data!*
+
+Also note that once instantiated these are _immutible_. These are meant to be treated as read-only since no mechanism to feed directly back on the process is available.
 
 ### Sending data to Canary: `CanarySender`
 

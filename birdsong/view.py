@@ -174,7 +174,7 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
             tagPath = tags 
             for valueChunk in self._getTagData(tagPath, **constraints):
                 # If only one value is returned, the result is NOT a list of one element
-                if valueChunk[tagPath] and not isinstance(valueChunk[tagPath][0], list):
+                if valueChunk.get(tagPath,[]) and not isinstance(valueChunk[tagPath][0], list):
                     return [Tvq(*valueChunk[tagPath])]
                 else:
                     return [Tvq(*value) for value in valueChunk.get(tagPath,[])]
