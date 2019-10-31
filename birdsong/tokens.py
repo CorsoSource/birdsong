@@ -136,8 +136,8 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
 
     def _rotateLiveDataToken(self, liveDataToken):
         """Rotate the live data token, maintaining the current configuration."""
-        for tagSet,liveDataToken in self._liveDataTokens.items():
-            if liveDataToken == jsonData['liveDataToken']:
+        for tagSet,activeLiveDataToken in self._liveDataTokens.items():
+            if liveDataToken == activeLiveDataToken:
                 tagSetKey = tagSet 
                 break
         else:
