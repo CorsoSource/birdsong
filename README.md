@@ -45,7 +45,7 @@ Depending on your environment, use the Git branch appropriate.
 
 ```python
 # get started so quick we don't even have time for text outside a code block
-from birdsong import CanarySend, CanaryView, Tvq
+from birdsong import CanarySender, CanaryView, Tvq
 
 viewName = 'CS-Surface61'
 datasetName = 'Testing2'
