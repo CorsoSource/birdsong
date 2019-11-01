@@ -2,6 +2,9 @@ import ciso8601, arrow
 from datetime import datetime
 
 
+UNIX_EPOCH = arrow.get('1970-01-01T00:00:00Z')
+
+
 class BaseValue(object):
 
     __slots__ = ('_tuple')
@@ -58,9 +61,16 @@ class BaseValue(object):
         self._timeFormat = formatString
 
     def _coerceTimestamp(self, timestamp):
-        if self._timeFormat:
-            return arrow.get(timestamp, self._arrowTimeFormat)
         if isinstance(timestamp, str):
+            # A timestamp on Christ's Epoch should be understood as an error.
+            # It's not a real time, so return None. It's essentially a soft error.
+            # Since it's _not_ a timestamp, we'll return None.
+            if timestamp.startswith('0001-01-01'):
+                return None
+
+            if self._timeFormat:
+                return arrow.get(timestamp, self._arrowTimeFormat)
+
             try: # the iso8601 format first
                 return arrow.Arrow.fromdatetime(ciso8601.parse_datetime(timestamp))
             except ValueError:

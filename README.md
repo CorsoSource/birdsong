@@ -113,6 +113,8 @@ For demo purposes, I'll be referencing these tags, unless stated otherwise.
 
 Three helper classes are provided: `Tvq`, `Property`, and `Annotation`. These are all based on a class that allow these to be created with a bit of flexibility. Importantly, these will ensure values are sent to Canary in the expected order while leaving optional values out.
 
+> Note: If Canary returns a date of `0001-01-01T00:00:00.0000000` this will be set on the `timestamp` fields as `None`. It's a value returned under some circumstances (like requesting data for a nonexistent tag in a valid dataset), but because it's not a valid time `birdsong` interprets this to make sure it can't be confused for a normal datetime object.
+
 To generate an instance, pass in values either in order or by name:
 
 ```python
@@ -130,6 +132,8 @@ None
 999
 >>> tvq2['value']
 999
+>>> Tvq('0001-01-01T00:00:00.0000000-08:00',None)
+{'timestamp': None, 'value': None}
 ```
 
 The values for these are:
