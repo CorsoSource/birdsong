@@ -122,10 +122,16 @@ class CanarySender(SessionTokenManagement, UserTokenManagement):
             allowedTypes = (Tvq, Property, Annotation)
             # If the list isn't empty, check if it's a singleton entry
             if someList and not isinstance(someList[0], (tuple, list) + allowedTypes):
-                return [someList.values() if isinstance(someList, allowedTypes) else someList]
+                return [someList.values(iso8601=True) 
+                            if isinstance(someList, allowedTypes) 
+                            else someList
+                        ]
             else:
-                return [value.values() if isinstance(value, allowedTypes) else value
-                        for value in values]
+                return [value.values(iso8601=True) 
+                            if isinstance(value, allowedTypes) 
+                            else value
+                        for value in values
+                        ]
 
         # Convert from helpers objects, if needed. (This ensures it serializes correctly)
         for tag,values in tvqs.items():

@@ -1,7 +1,7 @@
 # Birdsong - A Python interface to the Canary API
 _Make talking to Canary easy_
 
-Canary is a historian from Canary Labs, and `Birdsong` is a library for interfacing with it via Python.
+[Canary](https://canarylabs.com/en/products/historian) is a historian from [Canary Labs](https://github.com/CanaryLabs), and `birdsong` is a library for interfacing with it via Python.
 
 Birdsong will take care of the details of dealing with REST calls, tokens, continuations, and other powerful low level features to let you focus on making Canary sing.
 
@@ -45,13 +45,13 @@ Depending on your environment, use the Git branch appropriate.
 
 ```python
 # get started so quick we don't even have time for text outside a code block
-from birdsong import CanarySend, CanaryView, Tvq
+from birdsong import CanarySender, CanaryView, Tvq
 
 viewName = 'CS-Surface61'
 datasetName = 'Testing2'
 tagPath = datasetName + '.Quick Data!!!'
 with CanarySender(autoCreateDatasets=True) as sender:
-    sender.storeData({tagPath: [Tvq('2019-10-20 12:34', -666), Tvq('2019-10-20 3:20 PM', 999)]})
+    sender.storeData({tagPath: [Tvq('2019-10-20 12:34Z', -666), Tvq('2019-10-20 15:20Z', 999)]})
     
     with CanaryView() as view:
         print(next(view.getTagData(viewName + '.' + tagPath)))
@@ -113,6 +113,8 @@ For demo purposes, I'll be referencing these tags, unless stated otherwise.
 
 Three helper classes are provided: `Tvq`, `Property`, and `Annotation`. These are all based on a class that allow these to be created with a bit of flexibility. Importantly, these will ensure values are sent to Canary in the expected order while leaving optional values out.
 
+> Note: If Canary returns a date of `0001-01-01T00:00:00.0000000` this will be set on the `timestamp` fields as `None`. It's a value returned under some circumstances (like requesting data for a nonexistent tag in a valid dataset), but because it's not a valid time `birdsong` interprets this to make sure it can't be confused for a normal datetime object.
+
 To generate an instance, pass in values either in order or by name:
 
 ```python
@@ -130,6 +132,8 @@ None
 999
 >>> tvq2['value']
 999
+>>> Tvq('0001-01-01T00:00:00.0000000-08:00',None)
+{'timestamp': None, 'value': None}
 ```
 
 The values for these are:
@@ -140,6 +144,12 @@ The values for these are:
 | Property | `name`, `timestamp`, `value`, `quality` * |
 | Annotation | `user`, `timestamp`, `value`, `createdAt`* |
 > `*` are optional
+
+Note that these will attempt to convert the timestamp to an [Arrow](https://arrow.readthedocs.io/en/latest/) datetime object. It's just like a normal `datetime` object, but a bit smarter and easier to manipulate. Combined with [ciso8601](https://github.com/closeio/ciso8601), this can quickly convert the timestamps to a highly flexible object.
+
+Each class has a settter like `Tvq.setTimeFormat('...')` that can be called in case something perverse like a _non_-ISO8601 date is parsed. Note that a timezone should be set. Canary returns results in a timezone sensitive way - *be _ever_ wary of naked timestamps, especially when searching, filtering, and storing data!*
+
+Also note that once instantiated these are _immutible_. These are meant to be treated as read-only since no mechanism to feed directly back on the process is available.
 
 ### Sending data to Canary: `CanarySender`
 
