@@ -1,3 +1,6 @@
+# Ensure that the library loads the Ignition API stuff
+import system
+
 VALIDATE_SSL_CERTS = False
 
 class RestInterface(object):
