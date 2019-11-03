@@ -41,6 +41,21 @@ python -m pip install birdsong --upgrade
 Copy the contents of the Canary folder into your `site-packages` folder in your Python `libs` folder.
 Depending on your environment, use the Git branch appropriate. 
 
+
+### Ignition
+
+
+Choose the branch for the version of Ignition in use first. From there you may either:
+
+A) Copy the `/birdsong` directory from this repo into directly into Ignition's `./user-lib/pylib/site-packages/` directory.
+On Windows systems this will likely be `C:\Program Files\Inductive Automation\Ignition\user-lib\pylib\site-packages`
+
+B) Copy the contents of the all-in-one python file into the project library in the Ignition Designer.
+That file will be named something like `birdsong.ignition_8.py`.
+
+Once copied, the install can be tested with the `./test/playground_test.py` file in that branch. 
+(Change the import path if Birdsong was places somewhere other than `site-packages` or in `Project Library/birdsong`)
+
 ## Quickstart
 
 ```python
