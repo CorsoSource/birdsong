@@ -1,13 +1,10 @@
-import requests, json
-import urllib3
-
 VALIDATE_SSL_CERTS = False
 
 class RestInterface(object):
     """Interface methods for talking to Canary."""
     apiVersion = 'api/v1'
 
-    __slots__ = ('host', 'https', 'ports', '_session', 'lastResults')
+    __slots__ = ('host', 'https', 'ports', 'lastResults')
     
     def __init__(self, host='localhost', https=False, 
                  httpPort=80, httpsPort=443, verifySSL=VALIDATE_SSL_CERTS,
@@ -16,26 +13,16 @@ class RestInterface(object):
         self.host  = host
         self.ports = (httpPort, httpsPort)
         
-        self._session = None
-
         self.lastResults = None
 
         self.verifySSL = verifySSL
-        if not self.verifySSL:
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        
+
         super(RestInterface,self).__init__(**configuration)
 
-        
-    @property
-    def session(self):
-        if not self._session:
-            self._session = requests.Session()
-        return self._session
     
     @staticmethod
     def _packagePayload(jsonData):
-        return json.dumps(jsonData)
+        return system.util.jsonEncode(jsonData, 2)
 
     @staticmethod
     def _coerceToList(obj):
@@ -53,14 +40,16 @@ class RestInterface(object):
     
     def _post(self, apiUrl, jsonData):
         jsonData = self._packagePayload(jsonData)
-
+    
         url = 'http%s://%s:%s/%s/%s' % ('s' if self.https else '', 
                                             self.host, 
                                             self.ports[self.https],
                                             self.apiVersion,
                                             apiUrl)
-        response = self.session.post(url,data=jsonData, verify=(self.https and self.verifySSL))
-        responseJson = response.json()
+                                            
+        response = system.net.httpPost(url, contentType='applicatfion/json', postData=jsonData, 
+                                       bypassCertValidation=not (self.https and self.verifySSL))
+        responseJson = system.util.jsonDecode(response)
         self.lastResults = responseJson
         
     def _iterPost(self, apiUrl, jsonData, resultKey):

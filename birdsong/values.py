@@ -1,19 +1,21 @@
-import ciso8601, arrow
-from datetime import datetime
-
-
-UNIX_EPOCH = arrow.get('1970-01-01T00:00:00Z')
+# Internally, all timestamps will be held as the OffsetDateTime objects.
+# It maintains precision, can be manipulated, and writes back as ISO8601.
+# TL;DR: OffsetDateTime is the least worst solution that doesn't involve
+#        dragging in an external library.
+# Instant is included because 
+from java.time import OffsetDateTime, Instant
+from java.time.format import DateTimeFormatter
+from java.text import SimpleDateFormat
 
 
 class BaseValue(object):
 
     __slots__ = ('_tuple')
 
-    _fields = ('value')
-    _optional = (True)
+    _fields = ('value',)
+    _optional = (True,)
 
     _timeFormat = None
-
 
     def __init__(self, value=None):
         self._tuple = (value,)
@@ -27,9 +29,9 @@ class BaseValue(object):
 
     def _astuple(self, iso8601=False):
         if iso8601:
-            return tuple(value.isoformat() 
-                            if isinstance(value, (datetime,arrow.Arrow)) 
-                            else value
+            return tuple(value.toString() 
+                         if isinstance(value, (OffsetDateTime,Instant)) 
+                            else value # assume the best?
                          for value,optional 
                          in zip(self._tuple, self._optional) 
                          if not optional or not (value is None))
@@ -55,40 +57,55 @@ class BaseValue(object):
         return repr(self._asdict(iso8601=True))
 
     # Some time helper / coersion bits.
-    # Don't try to need this: just use ISO8601 for your date format like Canary does:
-    #  YYYY-MM-DD HH:mm:ss.SSSSSSZ
-    def setTimeFormat(self, formatString):
-        self._timeFormat = formatString
+    def setTimeFormat(self, format):
+        """In case timestamps are in a crazy format, enter a custom formatter here.
+        Don't try to need this: just use ISO8601 for your date format like Canary does:
+        YYYY-MM-DD HH:mm:ss.SSSSSSZ
+        """
+        if isinstance(format, (str, unicode)):
+            self._timeFormat = DateTimeFormatter.ofPattern(format)
+        elif isinstance(format, DateTimeFormatter):
+            self._timeFormat = format
+        elif isinstance(format, SimpleDateFormat):
+            self._timeFormat = format
+            #raise NotImplementedError('The SimpleDateFormat parser can lose precision on conversion. Use the improved Java 8+ time libraries via java.time.format.DateTimeFormatter')
+        else:
+            raise NotImplementedError('The given format "%r" is not implemented for birdsong yet.' % format)
 
     def _coerceTimestamp(self, timestamp):
         if isinstance(timestamp, str):
             # A timestamp on Christ's Epoch should be understood as an error.
             # It's not a real time, so return None. It's essentially a soft error.
-            # Since it's _not_ a timestamp, we'll return None.
             if timestamp.startswith('0001-01-01'):
                 return None
 
             if self._timeFormat:
-                return arrow.get(timestamp, self._arrowTimeFormat)
+                if isinstance(self._timeFormat, DateTimeFormatter):
+                    return OffsetDateTime.parse(timestamp, self._timeFormat)
+                elif isinstance(self._timeFormat, SimpleDateFormat):
+                    return self._coerceTimestamp(self._timeFormat.parse(timestamp))
+                else:
+                    raise NotImplementedError('The formatter "%r" is not yet usable automatically for the birdsong helper classes' % self._timeformat)
 
             try: # the iso8601 format first
-                return arrow.Arrow.fromdatetime(ciso8601.parse_datetime(timestamp))
+                return OffsetDateTime.parse(timestamp)
             except ValueError:
                 raise ValueError('%r attempted to parse "%s" without a time format' % (self, timestamp))
         
-        # if it's already a datetime converto to this more convenient class
-        elif isinstance(timestamp, datetime):
-            return arrow.Arrow.fromdatetime(timestamp)
-
-        # if it's a tuple (like what would be used ot initialize a datetime), then init
-        elif isinstance(timestamp, (tuple,list)):
-            return arrow.Arrow(*timestamp)
-
+        # Assume the date object was created locally. Because.
+        elif isinstance(timestamp, Date):
+            return OffsetDateTime.ofInstant(timestamp.toInstant(), ZoneId.systemDefault())
+        
+        # Assume the Instant is in UCT, because it's supposed to be.
+        elif isinstance(timestamp, Instant):
+            return OffsetDateTime.ofInstant(timestamp, ZoneId.of('UTC'))
+        
+        # Trivial case
+        elif timestamp is None:
+            return None
         else:
-            try: # see if arrow can convert it anyhow (like ms since epoch...)
-                return arrow.get(timestamp)
-            except ValueError:
-                raise ValueError('%r attempted to parse "%s" without a time format' % (self, timestamp))
+            raise NotImplementedError('Birdsong on Java does not yet automatically consume this date format: %r' % timestamp)
+        
 
 
 def _finalize(BVClass, aliases=None):
@@ -144,3 +161,5 @@ VALUE_TYPE_MAP = {'tvq': Tvq, 'property': Property, 'annotation': Annotation}
    
 def createValue(valueType='tvq', *values):
     return VALUE_TYPE_MAP[valueType.lower()](*values)
+
+
