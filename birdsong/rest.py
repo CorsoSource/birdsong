@@ -1,6 +1,11 @@
 import requests, json
 import urllib3
 
+# For JSON payload packaging, import these for easier/auto serializing
+from datetime import datetime, date
+import arrow
+
+
 VALIDATE_SSL_CERTS = False
 
 class RestInterface(object):
@@ -33,9 +38,19 @@ class RestInterface(object):
             self._session = requests.Session()
         return self._session
     
-    @staticmethod
-    def _packagePayload(jsonData):
-        return json.dumps(jsonData)
+    @classmethod
+    def _coerceThingForJSON(cls, thing):
+        """JSON serializes directly or not at all. 
+        Dates are easy though.
+        """
+        if isinstance(thing, (datetime, date, arrow.Arrow)):
+            return thing.isoformat()
+        # Simply return it and hope the error gets to someone who can coerce it better
+        return thing
+
+    @classmethod
+    def _packagePayload(cls, jsonData):
+        return json.dumps(jsonData, default=cls._coerceThingForJSON)
 
     @staticmethod
     def _coerceToList(obj):
