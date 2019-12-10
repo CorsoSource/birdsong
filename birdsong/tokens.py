@@ -1,21 +1,54 @@
 from .rest import RestInterface
 
+try:
+    import keyring
+except ImportError:
+    class keyring(object):
+        """Pass-thru dummy storage if keyring is unavailable"""
+        __slots__ = ('__storage')
+        __storage = {}
+
+        @classmethod
+        def set_password(cls, service, username, password):
+            cls.__storage[(service,username)] = password
+
+        @classmethod
+        def get_password(cls, service, username):
+            return cls.__storage.get((service,username), None)
+
+        @classmethod
+        def delete_password(cls, service, username, password=None):
+            try:
+                del cls.__storage[(service,username)]
+            except KeyError:
+                pass
+
 
 class UserTokenManagement(RestInterface):
 
-    __slots__ = ('_username', '_password', '_userToken')
+    __slots__ = ('_userToken', '_username', '__clear_on_exit')
     
     def __init__(self, username='', password='', **configuration):
         
-        self._username = username
-        self._password = password
         self._userToken = None
+        self._username = username
+        keyring.set_password('birdsong', self.__self_id, password)
+        self.__clear_on_exit = False
 
-        if self._username and self._password:
+        if self._username and self.__password:
             configuration['https'] = True
 
         super().__init__(**configuration)
-    
+
+
+    @property
+    def __self_id(self):
+        return '<%s at %s>' % (self.__class__.__name__, hex(id(self)))
+
+    @property
+    def __password(self):
+        return keyring.get_password('birdsong', self.__self_id)
+
 
     @property
     def userToken(self):
@@ -29,7 +62,7 @@ class UserTokenManagement(RestInterface):
     def _getUserToken(self):
         jsonData = {
             "username":self._username,
-            "password":self._password,
+            "password":self.__password,
             "application":"getData"
         }
         self._userToken = self._singlePost('getUserToken', jsonData, 'userToken')
@@ -49,15 +82,16 @@ class UserTokenManagement(RestInterface):
     
     def __exit__(self, *args):
         self._revokeUserToken()
+        if self._username:
+            self._username = ''
+            keyring.delete_password('birdsong', self.__self_id)
         
     def __del__(self):
         self.__exit__()
 
 
-    # Error Handling
-
     def _post(self, apiUrl, jsonData):
-
+        """Error Handling context for user tokens"""
         super()._post(apiUrl, jsonData)
 
         # Check if it failed. If so, reload.
@@ -151,9 +185,8 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
         return self._liveDataTokens[tagSetKey]
 
 
-    # Error Handling
-
     def _post(self, apiUrl, jsonData):
+        """Error Handling context for live data tokens"""
         super()._post(apiUrl, jsonData)
 
         # Check if it failed. If so, reload.

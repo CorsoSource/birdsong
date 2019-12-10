@@ -67,19 +67,29 @@ class RestInterface(object):
     # REST API methods
     
     def _post(self, apiUrl, jsonData):
-        jsonData = self._packagePayload(jsonData)
-
+        payload = self._packagePayload(jsonData)
         url = 'http%s://%s:%s/%s/%s' % ('s' if self.https else '', 
                                             self.host, 
                                             self.ports[self.https],
                                             self.apiVersion,
                                             apiUrl)
-        response = self.session.post(url,data=jsonData, verify=(self.https and self.verifySSL))
+        response = self.session.post(url,data=payload, verify=(self.https and self.verifySSL))
         responseJson = response.json()
         self.lastResults = responseJson
-        
+       
+
+    def _raiseUnhandledPostError(self, apiUrl, jsonData):
+        """Separated out to allow subclasses to manage certain error states on their own"""
+        if self.lastResults['errors']:
+            if jsonData and 'password' in jsonData:
+                jsonData['password'] = '********'
+            raise RuntimeError('Canary API call to "%s" had errors: %r.\nData passed: %r' % (
+                apiUrl, self.lastResults['errors'], jsonData))
+
+
     def _iterPost(self, apiUrl, jsonData, resultKey):
         self._post(apiUrl, jsonData)
+        self._raiseUnhandledPostError(apiUrl, jsonData)
         while self.lastResults.get('continuation', False):
             results = self.lastResults[resultKey]
             if isinstance(results, (list,tuple)):
@@ -89,6 +99,7 @@ class RestInterface(object):
                 yield results
             jsonData['continuation'] = self.lastResults['continuation']
             self._post(apiUrl, jsonData)
+            self._raiseUnhandledPostError(apiUrl, jsonData)
         else:
             results = self.lastResults[resultKey]
             if isinstance(results, (list,tuple)):
@@ -99,7 +110,6 @@ class RestInterface(object):
     
     def _singlePost(self, apiUrl, jsonData, resultKey):
         self._post(apiUrl, jsonData)
-        if self.lastResults['errors']:
-            raise RuntimeError('Canary API call to "%s" had errors: %r.\nData passed: %r' % (
-                apiUrl, self.lastResults['errors'], jsonData))
+        self._raiseUnhandledPostError(apiUrl, jsonData)
+
         return self.lastResults[resultKey]
