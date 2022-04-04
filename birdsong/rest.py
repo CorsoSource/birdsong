@@ -97,7 +97,10 @@ class RestInterface(object):
                     yield item
             else:
                 yield results
-            jsonData.setdefault('continuation', self.lastResults['continuation'])
+            if 'continuation' in jsonData:
+                jsonData['continuation'] = self.lastResults['continuation']
+            else:
+                jsonData.setdefault('continuation', self.lastResults['continuation'])
             self._post(apiUrl, jsonData)
             self._raiseUnhandledPostError(apiUrl, jsonData)
         else:
