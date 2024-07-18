@@ -20,4 +20,11 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=[
+        'ciso8601',
+        'arrow',
+        'urllib3',
+        'requests',
+        'keyring'
+    ]
 )
