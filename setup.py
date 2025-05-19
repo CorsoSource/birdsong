@@ -5,13 +5,18 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="birdsong",
-    version="1.3.0",
+    version="1.4.0",
     author="Andrew Geiger",
+    maintainer="Nick Fornicola",
     author_email="andrew.geiger@corsosystems.com",
+    maintainer_email="nfornicola@beusaenergy.com",
     description="A Python API to Canary Lab's historian web services.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/CorsoSource/birdsong",
+    project_urls={
+        "Origingal Project":"https://github.com/CorsoSource/birdsong",
+        "Updated Project": "",
+    },
     packages=setuptools.find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -19,7 +24,7 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.12',
     install_requires=[
         'ciso8601',
         'arrow',

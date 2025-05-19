@@ -138,6 +138,9 @@ class LiveDataTokenManagement(UserTokenManagement, RestInterface):
             "userToken":self._userToken,
             "tags": self._coerceToList(tags)
         }
+        # Set default mode if not specified
+        if 'mode' not in configuration:
+            configuration['mode'] = 'AllValues'
         jsonData.update(configuration)
         tagSet = frozenset(jsonData['tags'])
         if not tagSet in self._liveDataTokens:
@@ -303,7 +306,7 @@ class SessionTokenManagement(UserTokenManagement, RestInterface):
         self._singlePost('getErrors', jsonData)        
 
 
-    def keepAlive():
+    def keepAlive(self):
         jsonData = {
             "userToken":self.userToken,
             "sessionToken":self.sessionToken

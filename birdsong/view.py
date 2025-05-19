@@ -8,7 +8,7 @@ DEFAULT_VIEW_PORT_USERNAME_HTTPS = '55236'
 
 class CanaryView(LiveDataTokenManagement, UserTokenManagement):
     
-    apiVersion = 'api/v1'
+    apiVersion = 'api/v2'
     
     def __init__(self,
                  httpPort =DEFAULT_VIEW_PORT_ANONYMOUS_HTTP,
@@ -136,11 +136,10 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
 
     def getTagData(self, tags, **constraints):
         """Returns the data for the given tags.
-          If just a tag path is given, results are the values only.
-          If a list is given, an iterable of tagpaths and their values is returned.
+        If just a tag path is given, results are the values only.
+        If a list is given, an iterable of tagpaths and their values is returned.
             (For example, you can use this in a for loop like
-               for tagpath,values in view.getTagData(taglist) )
-
+            for tagpath,values in view.getTagData(taglist) )
 
         Constraints defines the range and type of data returned:
             startTime: (str) Earliest time; tradtional or relative date/times
@@ -148,6 +147,9 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
             aggregateName: (str) Function to apply to data (call getAggregates for available options)
             aggregateInterval: (str) Interval to apply for function; traditional or relative time spans
             includeQuality: (bool: false) Include the value's quality code
+            includeBounds: (bool: false) Include bounding values for Raw Data calls
+            useTimeExtension: (bool: true) Retrieve time extended timestamp for last value calls
+            quality: (str) Quality of data to return for last value calls ('any', 'good', 'non-bad')
             maxSize: (int:10000) Maximum number of values to return
 
         Args:
@@ -156,39 +158,168 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
         Returns:
             - Iterator yielding values for a tag path or dict of tags and their qualified values
         """
-        # User friendly conversion (at least because I do this constantly...)
+       # Add timezone handling if not already set via userToken
+        if 'timezone' not in constraints and not self._username:
+            constraints['timezone'] = 'UTC'  # Default to UTC if not specified
+
+        # Handle new parameters
+        if 'useTimeExtension' not in constraints:
+            constraints['useTimeExtension'] = True  # Defaults to true in v2
+
+        # If quality is specified and not 'any', force useTimeExtension to false
+        if 'quality' in constraints and constraints['quality'] != 'any':
+            constraints['useTimeExtension'] = False
+
+        # User friendly conversion
         userFriendlyAutoConversions = [
             ('startDate', 'startTime'),
             ('start', 'startTime'),
-
             ('endDate', 'endTime'),
             ('end', 'endTime'),
         ]
-        for fromKey,toKey in userFriendlyAutoConversions:
+        for fromKey, toKey in userFriendlyAutoConversions:
             if fromKey in constraints:
                 constraints[toKey] = constraints[fromKey]
                 del constraints[fromKey]
 
         # If only a single tag path was provided, simply return values
         if isinstance(tags, str):
-            tagPath = tags 
-            for valueChunk in self._getTagData(tagPath, **constraints):
-                # If only one value is returned, the result is NOT a list of one element
-                if valueChunk.get(tagPath,[]) and not isinstance(valueChunk[tagPath][0], list):
-                    return [Tvq(*valueChunk[tagPath])]
-                else:
-                    return [Tvq(*value) for value in valueChunk.get(tagPath,[])]
-        else:
-            tagData = {tagPath:[] for tagPath in tags}
-            for tagChunk in self._getTagData(tags, **constraints):
-                for tagPath,values in tagChunk.items():
-                    # Compensate for non-list-wrapped values
-                    if values and not isinstance(values[0], list):
-                        tagData[tagPath].append(Tvq(*values))
-                    else:
-                        tagData[tagPath].extend([Tvq(*value) for value in values])
+            tagPath = tags
+            try:
+                values = []
+                for valueChunk in self._getTagData([tagPath], **constraints):
+                    # Add debug output
+                    print(f"Debug - valueChunk: {valueChunk}")
 
-            return ((tagPath, tagData.get(tagPath, [])) for tagPath in tags)
+                    # Handle the new response format where each value is an object with t and v properties
+                    if tagPath in valueChunk:
+                        for item in valueChunk[tagPath]:
+                            if isinstance(item, dict) and 't' in item and 'v' in item:
+                                # Extract time and value from the object
+                                t = item['t']
+                                v = item['v']
+                                # Quality might be included or might be None/missing
+                                q = item.get('q', None)
+                                values.append(Tvq(t, v, q))
+                return values
+            except Exception as e:
+                print(f"Error in getTagData: {str(e)}")
+                return []
+        else:
+            tagData = {tagPath: [] for tagPath in tags}
+            try:
+                for tagChunk in self._getTagData(tags, **constraints):
+                    # Add debug output
+                    print(f"Debug - tagChunk: {tagChunk}")
+
+                    for tagPath in tags:
+                        if tagPath in tagChunk:
+                            for item in tagChunk[tagPath]:
+                                if isinstance(item, dict) and 't' in item and 'v' in item:
+                                    # Extract time and value from the object
+                                    t = item['t']
+                                    v = item['v']
+                                    # Quality might be included or might be None/missing
+                                    q = item.get('q', None)
+                                    tagData[tagPath].append(Tvq(t, v, q))
+
+                return ((tagPath, tagData.get(tagPath, [])) for tagPath in tags)
+            except Exception as e:
+                print(f"Error in getTagData: {str(e)}")
+                return ((tagPath, []) for tagPath in tags)
+        
+    def _getTagData2(self, tags, **constraints):
+        jsonData = {
+            'userToken': self.userToken,
+            'tags': self._coerceToList(tags)    
+        }
+        jsonData.update(constraints)
+        return self._iterPost('getTagData2', jsonData, 'data')
+        
+    def getTagData2(self, tags, **constraints):
+        """Similar method to getTagData, but interprets maxSize paramater differently.
+        In getTagData2, maxSize is per tag rather than the total across all tags
+
+        Constraints defines the range and type of data returned:
+            startTime: (str) Earliest time; tradtional or relative date/times
+            endTime: (str) Latest time; traditional or relative date/times
+            aggregateName: (str) Function to apply to data (call getAggregates for available options)
+            aggregateInterval: (str) Interval to apply for function; traditional or relative time spans
+            includeQuality: (bool: false) Include the value's quality code
+            includeBounds: (bool: false) Include bounding values for Raw Data calls
+            useTimeExtension: (bool: true) Retrieve time extended timestamp for last value calls
+            quality: (str) Quality of data to return for last value calls ('any', 'good', 'non-bad')
+            maxSize: (int:10000) Maximum number of values to return per tag
+        """
+        # Add timezone handling if not already set via userToken
+        if 'timezone' not in constraints and not self._username:
+            constraints['timezone'] = 'UTC'  # Default to UTC if not specified
+
+        # Handle new parameters
+        if 'useTimeExtension' not in constraints:
+            constraints['useTimeExtension'] = True  # Defaults to true in v2
+
+        # If quality is specified and not 'any', force useTimeExtension to false
+        if 'quality' in constraints and constraints['quality'] != 'any':
+            constraints['useTimeExtension'] = False
+
+        # User friendly conversion
+        userFriendlyAutoConversions = [
+            ('startDate', 'startTime'),
+            ('start', 'startTime'),
+            ('endDate', 'endTime'),
+            ('end', 'endTime'),
+        ]
+        for fromKey, toKey in userFriendlyAutoConversions:
+            if fromKey in constraints:
+                constraints[toKey] = constraints[fromKey]
+                del constraints[fromKey]
+
+        # If only a single tag path was provided, simply return values
+        if isinstance(tags, str):
+            tagPath = tags
+            try:
+                values = []
+                for valueChunk in self._getTagData2([tagPath], **constraints):
+                    # Add debug output
+                    print(f"Debug - valueChunk: {valueChunk}")
+
+                    # Handle the new response format where each value is an object with t and v properties
+                    if tagPath in valueChunk:
+                        for item in valueChunk[tagPath]:
+                            if isinstance(item, dict) and 't' in item and 'v' in item:
+                                # Extract time and value from the object
+                                t = item['t']
+                                v = item['v']
+                                # Quality might be included or might be None/missing
+                                q = item.get('q', None)
+                                values.append(Tvq(t, v, q))
+                return values
+            except Exception as e:
+                print(f"Error in getTagData2: {str(e)}")
+                return []
+        else:
+            tagData = {tagPath: [] for tagPath in tags}
+            try:
+                for tagChunk in self._getTagData2(tags, **constraints):
+                    # Add debug output
+                    print(f"Debug - tagChunk: {tagChunk}")
+
+                    for tagPath in tags:
+                        if tagPath in tagChunk:
+                            for item in tagChunk[tagPath]:
+                                if isinstance(item, dict) and 't' in item and 'v' in item:
+                                    # Extract time and value from the object
+                                    t = item['t']
+                                    v = item['v']
+                                    # Quality might be included or might be None/missing
+                                    q = item.get('q', None)
+                                    tagData[tagPath].append(Tvq(t, v, q))
+
+                return ((tagPath, tagData.get(tagPath, [])) for tagPath in tags)
+            except Exception as e:
+                print(f"Error in getTagData2: {str(e)}")
+                return ((tagPath, []) for tagPath in tags)
 
 
     def getLiveData(self, tags=None, **configuration):
@@ -235,7 +366,105 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
                 for tagPath,values in page.items():
                     yield tagPath, [Tvq(*value) for value in values]
 
+    def _getAnnotations(self, tags, startTime, endTime, **constraints):
+        """Low-level method to call the getAnnotations API endpoint."""
+        jsonData = {
+            'userToken': self.userToken,
+            'tags': self._coerceToList(tags),
+            'startTime': startTime,
+            'endTime': endTime
+        }
+        jsonData.update(constraints)
+        return self._iterPost('getAnnotations', jsonData, 'annotations')
 
+    def getAnnotations(self, tags, startTime, endTime, **constraints):
+        """Get annotations from requested tags within the given time interval."""
+        # Add timezone handling if not already set via userToken
+        if 'timezone' not in constraints and not self._username:
+            constraints['timezone'] = 'UTC'  # Default to UTC if not specified
+
+        # User friendly conversion for date/time parameters
+        userFriendlyAutoConversions = [
+            ('startDate', 'startTime'),
+            ('start', 'startTime'),
+            ('endDate', 'endTime'),
+            ('end', 'endTime'),
+        ]
+        for fromKey, toKey in userFriendlyAutoConversions:
+            if fromKey in constraints:
+                constraints[toKey] = constraints[fromKey]
+                del constraints[fromKey]
+
+        # If only a single tag path was provided, simply return annotations
+        if isinstance(tags, str):
+            tagPath = tags
+            try:
+                for annotationChunk in self._getAnnotations([tagPath], startTime, endTime, **constraints):
+                    # Add debug output
+                    print(f"Debug - annotationChunk: {annotationChunk}")
+                    
+                    # The response is likely a dict with tagName and annotations properties
+                    if isinstance(annotationChunk, dict) and annotationChunk.get('tagName') == tagPath:
+                        return annotationChunk.get('annotations', [])
+                return []
+            except Exception as e:
+                print(f"Error in getAnnotations: {str(e)}")
+                return []
+        else:
+            # For multiple tags, collect all annotations
+            tagAnnotations = {tagPath: [] for tagPath in tags}
+            try:
+                for tagPath in tags:
+                    for annotationChunk in self._getAnnotations([tagPath], startTime, endTime, **constraints):
+                        # Add debug output
+                        print(f"Debug - annotationChunk: {annotationChunk}")
+                        
+                        if isinstance(annotationChunk, dict) and annotationChunk.get('tagName') == tagPath:
+                            tagAnnotations[tagPath] = annotationChunk.get('annotations', [])
+                return tagAnnotations
+            except Exception as e:
+                print(f"Error in getAnnotations: {str(e)}")
+                return tagAnnotations
+        
+    def _getTagContext(self, tags, **constraints):
+        """Low-level method to call the getTagContext API endpoint."""
+        jsonData = {
+            'userToken': self.userToken,
+            'tags': self._coerceToList(tags)
+        }
+        jsonData.update(constraints)
+        return self._iterPost('getTagContext', jsonData, 'data')
+    
+    def getTagContext(self, tags, **constraints):
+        """Get context for requested tags including both the oldest and latest timestamps."""
+        # Add timezone handling if not already set via userToken
+        if 'timezone' not in constraints and not self._username:
+            constraints['timezone'] = 'UTC'  # Default to UTC if not specified
+
+        # If only a single tag path was provided, simply return its context
+        if isinstance(tags, str):
+            tagPath = tags
+            try:
+                for contextChunk in self._getTagContext([tagPath], **constraints):
+                    # The response is a dict with tagName and tagContext properties
+                    if isinstance(contextChunk, dict) and contextChunk.get('tagName') == tagPath:
+                        return contextChunk.get('tagContext', {})
+                return {}
+            except Exception as e:
+                print(f"Error in getTagContext: {str(e)}")
+                return {}
+        else:
+            # For multiple tags, collect all context data
+            tagContexts = {tagPath: {} for tagPath in tags}
+            try:
+                for tagPath in tags:
+                    for contextChunk in self._getTagContext([tagPath], **constraints):
+                        if isinstance(contextChunk, dict) and contextChunk.get('tagName') == tagPath:
+                            tagContexts[tagPath] = contextChunk.get('tagContext', {})
+                return tagContexts
+            except Exception as e:
+                print(f"Error in getTagContext: {str(e)}")
+                return tagContexts
 
     # Error Handling
 
@@ -245,3 +474,10 @@ class CanaryView(LiveDataTokenManagement, UserTokenManagement):
         # Check if it failed. If so, reload.
         if self.lastResults['statusCode'] == 'BadLicense':
             raise RuntimeError("The target Canary instance is not licensed for third party View usage.")
+        
+    def _raiseUnhandledPostError(self, apiUrl, jsonData):
+        if self.lastResults['statusCode'] != 'Good':
+            if jsonData and 'password' in jsonData:
+                jsonData['password'] = '****'
+            raise RuntimeError('Canary API call to "%s" had errors: %r.\nData passed: %r' % (
+                apiUrl, self.lastResults.get('errors', []), jsonData))

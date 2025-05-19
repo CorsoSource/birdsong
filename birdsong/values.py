@@ -72,7 +72,8 @@ class BaseValue(object):
                 return arrow.get(timestamp, self._arrowTimeFormat)
 
             try: # the iso8601 format first
-                return arrow.Arrow.fromdatetime(ciso8601.parse_datetime(timestamp))
+                dt = ciso8601.parse_datetime(timestamp)
+                return arrow.Arrow.fromdatetime(dt)
             except ValueError:
                 raise ValueError('%r attempted to parse "%s" without a time format' % (self, timestamp))
         
