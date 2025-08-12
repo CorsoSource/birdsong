@@ -5,10 +5,10 @@ _Make talking to Canary easy_
 
 Birdsong will take care of the details of dealing with REST calls, tokens, continuations, and other powerful low level features to let you focus on making Canary sing.
 
-v1.4.0 - Update for *Canary's v2 API* was kindly brought by Nick Fornicola (@nfornicola) and brings improvements in getting data, utility functions, and performance!
-v1.3.0 - Keyring and Arrow datetime support
-v1.2.8 - Ignition 8 example
-v1.2.0 - Initial release 
+ - `1.4.0` Update for Canary's v2 API was kindly brought by Nick Fornicola [@nfornicola](https://github.com/Nfornicola) and brings improvements in getting data, utility functions, and performance!
+ - `1.3.0` Keyring and Arrow datetime support
+ - `1.2.8` Ignition 8 example
+ - `1.2.0` Initial release 
 
 ## Table of Contents
 
