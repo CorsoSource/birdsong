@@ -7,15 +7,15 @@ setuptools.setup(
     name="birdsong",
     version="1.4.0",
     author="Andrew Geiger",
-    maintainer="Nick Fornicola",
     author_email="andrew.geiger@corsosystems.com",
+    maintainer="Nick Fornicola",
     maintainer_email="nfornicola@beusaenergy.com",
     description="A Python API to Canary Lab's historian web services.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     project_urls={
-        "Origingal Project":"https://github.com/CorsoSource/birdsong",
-        "Updated Project": "",
+        "Original Project": "https://github.com/CorsoSource/birdsong",
+        "Updated Project":  "",
     },
     packages=setuptools.find_packages(),
     classifiers=[
