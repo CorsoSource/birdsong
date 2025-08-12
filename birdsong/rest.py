@@ -10,7 +10,8 @@ VALIDATE_SSL_CERTS = False
 
 class RestInterface(object):
     """Interface methods for talking to Canary."""
-    apiVersion = 'api/v2'  #Chagned to v2
+    apiVersion = 'api/v2'  # Chagned to v2 for supported endpoint, 
+    #                        deprecating v1 (though mostly still compatible, us `api-v1` branch, release 1.3.0)
 
     __slots__ = ('host', 'https', 'ports', '_session', 'lastResults')
     
