@@ -5,6 +5,11 @@ _Make talking to Canary easy_
 
 Birdsong will take care of the details of dealing with REST calls, tokens, continuations, and other powerful low level features to let you focus on making Canary sing.
 
+v1.4.0 - Update for *Canary's v2 API* was kindly brought by Nick Fornicola (@nfornicola) and brings improvements in getting data, utility functions, and performance!
+v1.3.0 - Keyring and Arrow datetime support
+v1.2.8 - Ignition 8 example
+v1.2.0 - Initial release 
+
 ## Table of Contents
 
  - [Installation](#installation)
@@ -22,6 +27,9 @@ Birdsong will take care of the details of dealing with REST calls, tokens, conti
      - [Option values: translate quality values: `getQualities`](#option-values-translate-quality-values-getqualities)
      - [Option values: get aggregate values: `getAggregates`](#option-values-get-aggregate-values-getaggregates)
      - [Get tag data: `getTagData`](#get-tag-data-gettagdata)
+     - [Get tag data (v2): `getTagData2`](#get-tag-data-v2-gettagdata2)
+     - [Get tag context: `getTagContext`](#get-tag-context-gettagcontext)
+     - [Get annotations: `getAnnotations`](#get-annotations-getannotations)
      - [Get tag properties: `getTagProperties`](#get-tag-properties-gettagproperties)
      - [Get *live* tag data: `getLiveData`](#get-live-tag-data-getlivedata)
  - [Advanced usage](#advanced-usage)
@@ -455,6 +463,93 @@ with CanaryView() as view:
 > CS-Surface61.Testing.OCEGGC - {}
 > ```
 
+#### Get tag data v2:  `getTagData2 `
+The  `getTagData2 ` method is an enhanced version of getTagData that supports Canary API v2 for versions 24.0+. It provides the same functionality as getTagData but with additional features and improved performance.
+
+ ``` python
+# Get data using getTagData2
+with CanaryView() as view:
+    for value in view.getTagData2('CS-Surface61.Testing.ADRLCO',
+                                 start='2019-10-01T00:00:00-0700',
+                                 end='2019-10-01T03:00-0700',
+                                 maxSize=100):
+        print(value)
+ ```
+The method supports the following additional parameters:
+
+useTimeExtension (boolean, default: True): When true, extends the time range to include values just outside the requested range
+quality (string): Filter values by quality (e.g., 'good', 'bad', 'uncertain')
+includeBounds (boolean): Include boundary values when filtering
+
+```python
+tagList = [mainView + '.' + tagPath for tagPath in tagPaths[1:3]]
+
+with CanaryView() as view:
+    for tagPath, values in view.getTagData2(tagList,
+                                          start='2019-10-01T00:00:00-0700',
+                                          end='2019-10-01T03:00-0700'):
+        print(tagPath)
+        for value in values:
+            print('\t%r' % value
+```
+### Get tag context: `getTagContext`
+The `getTagContext` method retrieves context information from tags, including the oldest and latest timestamps available.
+```python
+with CanaryView() as view:
+    context = view.getTagContext('CS-Surface61.Testing.ADRLCO')
+    print(context)
+```
+
+>```
+>{'historianItemId': 'localhost.ACTUAL_PRESS', 
+> 'sourceItemId': 'localhost.ACTUAL_PRESS', 
+> 'oldestTimeStamp': '2023-06-27T10:13:39.1990629-05:00', 
+>'latestTimeStamp': '2025-05-17T11:14:42.0000000-05:00'} 
+>```
+
+For multiple tags:
+```python
+tagList = ['CS-Surface61.' + tagPath for tagPath in tagPaths[:2]]
+with CanaryView() as view:
+    contexts = view.getTagContext(tagList)
+    print(contexts)
+```
+>```
+>{'CS-Surface61.Testing.ADRLCO': {'historianItemId': 'localhost.PRESS', 
+                                > 'sourceItemId': 'localhost.PRESS', 
+                                 >'oldestTimeStamp': '2023-06-27T10:13:39.1990629-05:00', 
+                                 >'latestTimeStamp': '2025-05-17T11:14:42.0000000-05:00'}, 
+ >'CS-Surface61.Testing.XBCFZF': {'historianItemId': 'localhost.FLOW', 
+                                >'sourceItemId': 'localhost.FLOW', 
+                                >'oldestTimeStamp': '2021-08-05T23:58:49.2612311-05:00', 
+                                >'latestTimeStamp': '2025-05-17T11:14:43.0000000-05:00'}}
+>```
+
+#### Get annotations: `getAnnotations`
+The `getAnnotations` method retrieves annotations for tags within a specified time range.
+```python
+with CanaryView() as view:
+    annotations = view.getAnnotations('CS-Surface61.Testing.ADRLCO',
+                                     '2019-10-01T00:00:00-0700',
+                                     '2019-10-01T03:00-0700')
+    print(annotations)
+```
+>```
+>[]
+>```
+
+For multiple tags:
+```python
+tagList = ['CS-Surface61.' + tagPath for tagPath in tagPaths[:2]]
+with CanaryView() as view:
+    annotations = view.getAnnotations(tagList,
+                                     '2019-10-01T00:00:00-0700',
+                                     '2019-10-01T03:00-0700')
+    print(annotations)
+```
+>```
+    >{'CS-Surface61.Testing.ADRLCO': [], 'CS-Surface61.Testing.XBCFZF': []}
+>```
 
 #### Get tag properties: `getTagProperties`
 
@@ -632,6 +727,14 @@ view.__exit__()
 ## Contributing
 
 Feel free to send suggestions and bug notices (especially if the API shifts/upgrades and is not caught quickly). Features requests are also welcome, though this is primarily meant to act as an interface wrapper library rather than an extension (though 'unpythonic' constructs will be considered bugs :)
+
+Special thanks to @nfornicola for the update for Canary's v2 API as well as numerous improvements and extra functions!
+ - `getTagData2`
+ - `getTagContext`
+ - `getAnnotations`
+ - Tweaks for performance
+ - Updates to test suite
+ - ... and documentation (huge help, thanks!)
 
 ## License
 
