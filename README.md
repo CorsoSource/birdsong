@@ -1,12 +1,14 @@
 # Birdsong - A Python interface to the Canary API
 _Make talking to Canary easy_
 
-This update is very small in nature and was only intended to make the API interface fully compatible with Canary's v2 web API. The bulk of this package remains unchanged from the original by Andrew Geiger at Corso Systems.
-
-
 [Canary](https://canarylabs.com/en/products/historian) is a historian from [Canary Labs](https://github.com/CanaryLabs), and `birdsong` is a library for interfacing with it via Python.
 
 Birdsong will take care of the details of dealing with REST calls, tokens, continuations, and other powerful low level features to let you focus on making Canary sing.
+
+v1.4.0 - Update for *Canary's v2 API* was kindly brought by Nick Fornicola (@nfornicola) and brings improvements in getting data, utility functions, and performance!
+v1.3.0 - Keyring and Arrow datetime support
+v1.2.8 - Ignition 8 example
+v1.2.0 - Initial release 
 
 ## Table of Contents
 
@@ -725,6 +727,14 @@ view.__exit__()
 ## Contributing
 
 Feel free to send suggestions and bug notices (especially if the API shifts/upgrades and is not caught quickly). Features requests are also welcome, though this is primarily meant to act as an interface wrapper library rather than an extension (though 'unpythonic' constructs will be considered bugs :)
+
+Special thanks to @nfornicola for the update for Canary's v2 API as well as numerous improvements and extra functions!
+ - `getTagData2`
+ - `getTagContext`
+ - `getAnnotations`
+ - Tweaks for performance
+ - Updates to test suite
+ - ... and documentation (huge help, thanks!)
 
 ## License
 
